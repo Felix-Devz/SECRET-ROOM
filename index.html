@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Masuk — Galeri Kelas XII Satelit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="loginView" class="view">
+  <div class="login-card">
+    <div class="login-badge">🛰️</div>
+    <h2>Galeri Kelas</h2>
+    <p class="login-sub">Masuk untuk melihat momen kelas XII Satelit</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="username" required />
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" required />
+      <button type="submit">Masuk</button>
+      <p id="loginError" class="error"></p>
+    </form>
+    <div class="demo-hint">
+      <strong>Belum punya akun?</strong>
+      Akun dibuat manual oleh admin lewat Supabase Dashboard — lihat README.md di project ini untuk cara membuat akun admin &amp; pengunjung.
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>
