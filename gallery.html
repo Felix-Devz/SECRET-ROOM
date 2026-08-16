@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Secter Room</title>
+<title>Galeri Kelas XII Satelit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
@@ -23,10 +23,10 @@
 
   <div class="hero">
     <div class="orbit-wrap">
-      <h1><span class="welcome">Welcome aib</span><span class="classname">XII SATELIT</span></h1>
+      <h1><span class="welcome">Welcome</span><span class="classname">XII SATELIT</span></h1>
       <div class="orbit-dot"></div>
     </div>
-    <p class="hero-sub">Kumpulan aib momen dan kenangan kelas ✨</p>
+    <p class="hero-sub">Kumpulan momen dan kenangan satu kelas ✨</p>
   </div>
 
   <div id="grid" class="grid"></div>
@@ -37,29 +37,6 @@
 <div id="modalOverlay" class="modal-overlay" style="display:none">
   <div class="modal" id="modalBody"></div>
 </div>
-
-<script>
-  // Buat titik-titik bintang di background (sama seperti halaman login)
-  (function(){
-    const container = document.getElementById('stars');
-    const frag = document.createDocumentFragment();
-    for(let i=0;i<55;i++){
-      const s = document.createElement('div');
-      s.className = 'star';
-      s.style.left = Math.random()*100 + '%';
-      s.style.top = Math.random()*100 + '%';
-      s.style.animationDelay = (Math.random()*4) + 's';
-      const size = (Math.random()*1.6+0.6);
-      s.style.width = size + 'px';
-      s.style.height = size + 'px';
-      frag.appendChild(s);
-    }
-    container.appendChild(frag);
-  })();
-</script>
-<script type="module" src="js/gallery.js"></script>
-</body>
-</html></div>
 
 <script>
   // Buat titik-titik bintang di background (sama seperti halaman login)
