@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Secret Room</title>
+<link rel="icon" type="image/png" href="spy3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="loginView" class="view">
+  <div class="login-card">
+    <a href="index.html" class="back-link">&larr; Kembali</a>
+    <div class="login-badge"><img src="logo/spy.png" alt="Logo"/></div>
+    <h2>Secret Room</h2>
+    <p class="login-sub" id="loginSub">Masuk untuk melihat aib kelas XII Satelit</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="username" required />
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" required />
+      <button type="submit">Masuk</button>
+      <p id="loginError" class="error"></p>
+    </form>
+    <div class="demo-hint">
+      <strong>Belum punya akun?</strong>
+      Akun Tamu<br>
+      User : tamu@gmail.com<br>
+      Pw   : tamu
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>

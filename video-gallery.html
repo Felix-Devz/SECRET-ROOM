@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Galeri aib Kelas XII Satelit</title>
+<title>Galeri Video Kelas XII Satelit</title>
+<link rel="icon" type="image/png" href="spy3.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
@@ -16,7 +17,7 @@
   <header>
     <span class="role-badge" id="roleBadge">Memuat...</span>
     <div class="header-actions">
-      <a href="video-gallery.html" class="btn-ghost">🎥 Momen Video</a>
+      <a href="gallery.html" class="btn-ghost">📷 Momen Foto</a>
       <button id="changePasswordBtn" class="btn-ghost">Ubah Password</button>
       <button id="logoutBtn">Keluar</button>
     </div>
@@ -24,16 +25,16 @@
 
   <div class="hero">
     <div class="orbit-wrap">
-      <h1><span class="welcome">Welcome</span><span class="classname">XII SATELIT</span></h1>
+      <h1><span class="welcome">Momen</span><span class="classname">VIDEO</span></h1>
       <div class="orbit-dot"></div>
     </div>
-    <p class="hero-sub">Kumpulan aib momen dan kenangan satu kelas ✨</p>
+    <p class="hero-sub">Kumpulan aib momen video satu kelas ✨</p>
   </div>
 
   <div id="grid" class="grid"></div>
 </div>
 
-<input type="file" id="fileInput" accept="image/*" style="display:none" />
+<input type="file" id="fileInput" accept="video/*" style="display:none" />
 
 <div id="modalOverlay" class="modal-overlay" style="display:none">
   <div class="modal" id="modalBody"></div>
@@ -63,6 +64,6 @@
     container.appendChild(frag);
   })();
 </script>
-<script type="module" src="js/gallery.js"></script>
+<script type="module" src="js/video-gallery.js"></script>
 </body>
 </html>

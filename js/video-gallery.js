@@ -1,7 +1,7 @@
-import { supabase } from './supabaseClient.js';
+import { supabaseVideo as supabase } from './supabaseClientVideo.js';
 
-const BUCKET = 'class-photos';
-const MAX_FILE_MB = 8;
+const BUCKET = 'class-videos';
+const MAX_FILE_MB = 50;
 
 let session = null;
 let profile = { role: 'visitor' };
@@ -18,10 +18,11 @@ const lightboxContent = document.getElementById('lightboxContent');
 const lightboxClose = document.getElementById('lightboxClose');
 
 function openLightbox(url, caption) {
-  lightboxContent.innerHTML = `<img src="${url}" alt="${escapeHtml(caption || 'Foto kelas')}"/>`;
+  lightboxContent.innerHTML = `<video src="${url}" controls autoplay></video>`;
   lightboxOverlay.style.display = 'flex';
 }
 function closeLightbox() {
+  lightboxContent.querySelectorAll('video').forEach((v) => v.pause());
   lightboxOverlay.style.display = 'none';
   lightboxContent.innerHTML = '';
 }
@@ -38,7 +39,7 @@ init();
 async function init() {
   const { data: { session: s } } = await supabase.auth.getSession();
   if (!s) {
-    window.location.href = 'login.html#tipe=foto';
+    window.location.href = 'login.html#tipe=video';
     return;
   }
   session = s;
@@ -54,7 +55,7 @@ async function init() {
 
   roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : '🙋 Pengunjung';
 
-  await loadPhotos();
+  await loadVideos();
   subscribeRealtime();
 }
 
@@ -62,8 +63,6 @@ logoutBtn.addEventListener('click', async () => {
   await supabase.auth.signOut();
   window.location.href = 'index.html';
 });
-
-// (dipertahankan) tombol logout mengarah balik ke halaman pilihan momen
 
 changePasswordBtn.addEventListener('click', openChangePasswordModal);
 
@@ -120,53 +119,54 @@ async function submitChangePassword() {
   window.location.href = 'index.html';
 }
 
-async function loadPhotos() {
+async function loadVideos() {
   const { data, error } = await supabase
-    .from('photos')
-    .select('id, image_url, caption, created_at')
+    .from('videos')
+    .select('id, video_url, caption, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
     console.error(error);
-    grid.innerHTML = '<div class="empty-state">Gagal memuat foto. Coba muat ulang halaman.</div>';
+    grid.innerHTML = '<div class="empty-state">Gagal memuat video. Coba muat ulang halaman.</div>';
     return;
   }
   renderGrid(data || []);
 }
 
-function renderGrid(photos) {
+function renderGrid(videos) {
   grid.innerHTML = '';
 
   if (profile.role === 'admin') {
     const tile = document.createElement('div');
     tile.className = 'upload-tile';
-    tile.innerHTML = '<span class="plus">+</span><span>Tambah Foto</span>';
+    tile.innerHTML = '<span class="plus">+</span><span>Tambah Video</span>';
     tile.addEventListener('click', () => fileInput.click());
     grid.appendChild(tile);
   }
 
-  if (photos.length === 0) {
+  if (videos.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.textContent = profile.role === 'admin'
-      ? 'Belum ada foto. Klik "+ Tambah Foto" untuk mengunggah momen pertama!'
-      : 'Belum ada foto. Nantikan admin mengunggah momen pertama!';
+      ? 'Belum ada video. Klik "+ Tambah Video" untuk mengunggah momen pertama!'
+      : 'Belum ada video. Nantikan admin mengunggah momen pertama!';
     grid.appendChild(empty);
     return;
   }
 
-  photos.forEach((photo) => {
+  videos.forEach((video) => {
     const card = document.createElement('div');
     card.className = 'polaroid';
     card.style.setProperty('--r', (Math.random() * 6 - 3) + 'deg');
     card.innerHTML = `
-      <div class="photo-frame"><img src="${photo.image_url}" alt="${escapeHtml(photo.caption || 'Foto kelas')}" loading="lazy"/></div>
-      <div class="caption">${photo.caption ? escapeHtml(photo.caption) : '&nbsp;'}</div>
+      <div class="photo-frame"><video src="${video.video_url}" controls preload="metadata"></video></div>
+      <div class="caption">${video.caption ? escapeHtml(video.caption) : '&nbsp;'}</div>
+      <button class="expand-btn" title="Perbesar">⤢</button>
       ${profile.role === 'admin' ? '<button class="del-btn" title="Hapus">✕</button>' : ''}
     `;
-    card.querySelector('.photo-frame').addEventListener('click', () => openLightbox(photo.image_url, photo.caption));
+    card.querySelector('.expand-btn').addEventListener('click', () => openLightbox(video.video_url, video.caption));
     if (profile.role === 'admin') {
-      card.querySelector('.del-btn').addEventListener('click', () => confirmDelete(photo.id));
+      card.querySelector('.del-btn').addEventListener('click', () => confirmDelete(video.id));
     }
     grid.appendChild(card);
   });
@@ -178,7 +178,7 @@ fileInput.addEventListener('change', (e) => {
   if (!file) return;
 
   if (file.size > MAX_FILE_MB * 1024 * 1024) {
-    alert(`Ukuran foto maksimal ${MAX_FILE_MB}MB ya.`);
+    alert(`Ukuran video maksimal ${MAX_FILE_MB}MB ya.`);
     return;
   }
   openCaptionModal(file);
@@ -187,8 +187,8 @@ fileInput.addEventListener('change', (e) => {
 function openCaptionModal(file) {
   const previewUrl = URL.createObjectURL(file);
   modalBody.innerHTML = `
-    <h3>Tambah Foto</h3>
-    <img src="${previewUrl}" class="modal-preview"/>
+    <h3>Tambah Video</h3>
+    <video src="${previewUrl}" class="modal-preview" controls></video>
     <label>Keterangan (opsional)</label>
     <input id="captionInput" placeholder="Tulis keterangan..." maxlength="60"/>
     <div class="modal-actions">
@@ -203,15 +203,15 @@ function openCaptionModal(file) {
     const saveBtn = document.getElementById('saveBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Mengunggah...';
-    await uploadPhoto(file, caption);
+    await uploadVideo(file, caption);
     URL.revokeObjectURL(previewUrl);
     closeModal();
   });
 }
 
-async function uploadPhoto(file, caption) {
+async function uploadVideo(file, caption) {
   try {
-    const ext = file.name.split('.').pop() || 'jpg';
+    const ext = file.name.split('.').pop() || 'mp4';
     const path = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
@@ -221,25 +221,25 @@ async function uploadPhoto(file, caption) {
 
     const { data: publicUrlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
-    const { error: insertError } = await supabase.from('photos').insert({
-      image_url: publicUrlData.publicUrl,
+    const { error: insertError } = await supabase.from('videos').insert({
+      video_url: publicUrlData.publicUrl,
       storage_path: path,
       caption,
       uploaded_by: session.user.id,
     });
     if (insertError) throw insertError;
 
-    await loadPhotos();
+    await loadVideos();
   } catch (err) {
     console.error(err);
-    alert('Gagal mengunggah foto: ' + err.message);
+    alert('Gagal mengunggah video: ' + err.message);
   }
 }
 
 function confirmDelete(id) {
   modalBody.innerHTML = `
-    <h3>Hapus foto ini?</h3>
-    <p class="modal-text">Foto akan dihapus untuk semua orang yang melihat galeri ini.</p>
+    <h3>Hapus video ini?</h3>
+    <p class="modal-text">Video akan dihapus untuk semua orang yang melihat galeri ini.</p>
     <div class="modal-actions">
       <button id="cancelBtn" class="btn-secondary">Batal</button>
       <button id="delBtn" class="btn-danger">Hapus</button>
@@ -248,15 +248,15 @@ function confirmDelete(id) {
   modalOverlay.style.display = 'flex';
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
   document.getElementById('delBtn').addEventListener('click', async () => {
-    await deletePhoto(id);
+    await deleteVideo(id);
     closeModal();
   });
 }
 
-async function deletePhoto(id) {
+async function deleteVideo(id) {
   try {
     const { data: row } = await supabase
-      .from('photos')
+      .from('videos')
       .select('storage_path')
       .eq('id', id)
       .single();
@@ -265,21 +265,21 @@ async function deletePhoto(id) {
       await supabase.storage.from(BUCKET).remove([row.storage_path]);
     }
 
-    const { error } = await supabase.from('photos').delete().eq('id', id);
+    const { error } = await supabase.from('videos').delete().eq('id', id);
     if (error) throw error;
 
-    await loadPhotos();
+    await loadVideos();
   } catch (err) {
     console.error(err);
-    alert('Gagal menghapus foto: ' + err.message);
+    alert('Gagal menghapus video: ' + err.message);
   }
 }
 
 function subscribeRealtime() {
-  // Supaya galeri otomatis update kalau ada foto baru / dihapus dari sesi lain
+  // Supaya galeri otomatis update kalau ada video baru / dihapus dari sesi lain
   supabase
-    .channel('photos-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'photos' }, () => loadPhotos())
+    .channel('videos-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => loadVideos())
     .subscribe();
 }
 

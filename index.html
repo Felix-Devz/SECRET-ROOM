@@ -13,28 +13,44 @@
 
 <div id="stars"></div>
 
-<div id="loginView" class="view">
-  <div class="login-card">
-    <div class="login-badge"><img src="logo/spy.png" alt="Logo"/></div>
+<div id="menuView" class="view">
+  <div class="menu-wrap">
+    <div class="menu-badge"><img src="logo/spy.png" alt="Logo"/></div>
     <h2>Secret Room</h2>
-    <p class="login-sub">Masuk untuk melihat aib kelas XII Satelit</p>
-    <form id="loginForm">
-      <label>Email</label>
-      <input id="email" type="email" autocomplete="username" required />
-      <label>Password</label>
-      <input id="password" type="password" autocomplete="current-password" required />
-      <button type="submit">Masuk</button>
-      <p id="loginError" class="error"></p>
-    </form>
-    <div class="demo-hint">
-      <strong>Belum punya akun?</strong>
-      Akun Tamu<br>
-      User : tamu@gmail.com<br>
-      Pw   : tamu
+    <p class="login-sub">Pilih momen yang mau kamu buka</p>
+
+    <div class="menu-options">
+      <a href="login.html#tipe=foto" class="menu-card">
+        <span class="menu-icon">📷</span>
+        <span class="menu-title">Momen Foto</span>
+        <span class="menu-desc">Kumpulan foto kenangan kelas</span>
+      </a>
+      <a href="login.html#tipe=video" class="menu-card">
+        <span class="menu-icon">🎥</span>
+        <span class="menu-title">Momen Video</span>
+        <span class="menu-desc">Kumpulan video kenangan kelas</span>
+      </a>
     </div>
   </div>
 </div>
 
-<script type="module" src="js/login.js"></script>
+<script>
+  (function(){
+    const container = document.getElementById('stars');
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<55;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random()*100 + '%';
+      s.style.top = Math.random()*100 + '%';
+      s.style.animationDelay = (Math.random()*4) + 's';
+      const size = (Math.random()*1.6+0.6);
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      frag.appendChild(s);
+    }
+    container.appendChild(frag);
+  })();
+</script>
 </body>
 </html>

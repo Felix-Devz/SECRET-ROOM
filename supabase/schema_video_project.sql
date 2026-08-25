@@ -1,17 +1,29 @@
 -- ============================================================
--- SKEMA DATABASE — Galeri Kelas XII Satelit
--- Jalankan seluruh file ini di Supabase Dashboard > SQL Editor
+-- SKEMA DATABASE — Galeri Kelas XII Satelit (PROJECT VIDEO)
+-- Jalankan seluruh file ini di Supabase Dashboard PROJECT VIDEO
+-- (project Supabase yang BERBEDA dari project foto) > SQL Editor
 -- ============================================================
 
+-- ============================================================
+-- 0. GRANT DASAR (WAJIB) — role 'authenticated' butuh izin dasar
+--    di level tabel, terpisah dari RLS policy. Tanpa ini,
+--    walaupun RLS policy sudah benar, tetap akan muncul error
+--    403 "permission denied for table ..." (kode 42501).
+-- ============================================================
+grant usage on schema public to authenticated;
+
 -- 1. Tabel PROFILES
---    Menyimpan peran (role) tiap user: admin atau visitor.
---    Terhubung 1:1 dengan auth.users bawaan Supabase.
+--    Project video punya user & auth sendiri (terpisah dari
+--    project foto), jadi tabel profiles ini juga perlu dibuat
+--    ulang di sini.
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
   role text not null default 'visitor' check (role in ('admin', 'visitor')),
   created_at timestamptz not null default now()
 );
+
+grant select, update on public.profiles to authenticated;
 
 alter table public.profiles enable row level security;
 
@@ -46,84 +58,10 @@ after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
 
--- 2. Tabel PHOTOS
---    Menyimpan metadata tiap foto. File asli foto disimpan
---    di Supabase Storage (bucket 'class-photos'); kolom
---    image_url berisi URL publiknya, storage_path dipakai
---    untuk menghapus file dari storage saat foto dihapus.
-create table if not exists public.photos (
-  id uuid primary key default gen_random_uuid(),
-  image_url text not null,
-  storage_path text not null default '',
-  caption text,
-  uploaded_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default now()
-);
-
-alter table public.photos enable row level security;
-
-create policy "Semua user login bisa lihat foto"
-on public.photos for select
-to authenticated
-using (true);
-
-create policy "Hanya admin yang bisa upload foto (insert)"
-on public.photos for insert
-to authenticated
-with check (
-  exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
-  )
-);
-
-create policy "Hanya admin yang bisa hapus foto"
-on public.photos for delete
-to authenticated
-using (
-  exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
-  )
-);
-
-
--- 3. STORAGE BUCKET untuk file foto
-insert into storage.buckets (id, name, public)
-values ('class-photos', 'class-photos', true)
-on conflict (id) do nothing;
-
-create policy "Publik bisa lihat / download foto"
-on storage.objects for select
-using (bucket_id = 'class-photos');
-
-create policy "Hanya admin yang bisa upload file ke storage"
-on storage.objects for insert
-to authenticated
-with check (
-  bucket_id = 'class-photos'
-  and exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
-  )
-);
-
-create policy "Hanya admin yang bisa hapus file di storage"
-on storage.objects for delete
-to authenticated
-using (
-  bucket_id = 'class-photos'
-  and exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
-  )
-);
-
-
--- 4. Tabel VIDEOS
---    Sama seperti photos, tapi untuk video. File asli video
---    disimpan di Supabase Storage (bucket 'class-videos');
---    kolom video_url berisi URL publiknya, storage_path dipakai
+-- 2. Tabel VIDEOS
+--    Menyimpan metadata tiap video. File asli video disimpan
+--    di Supabase Storage (bucket 'class-videos'); kolom
+--    video_url berisi URL publiknya, storage_path dipakai
 --    untuk menghapus file dari storage saat video dihapus.
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),
@@ -133,6 +71,8 @@ create table if not exists public.videos (
   uploaded_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+grant select, insert, delete on public.videos to authenticated;
 
 alter table public.videos enable row level security;
 
@@ -162,7 +102,10 @@ using (
 );
 
 
--- 5. STORAGE BUCKET untuk file video
+-- 3. STORAGE BUCKET untuk file video
+grant select, insert, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;
+
 insert into storage.buckets (id, name, public)
 values ('class-videos', 'class-videos', true)
 on conflict (id) do nothing;
@@ -195,10 +138,12 @@ using (
 
 
 -- ============================================================
--- 6. MENJADIKAN SATU AKUN SEBAGAI ADMIN
+-- 4. MENJADIKAN SATU AKUN SEBAGAI ADMIN (DI PROJECT VIDEO INI)
 --    Jalankan ini SETELAH kamu membuat user admin lewat
---    Dashboard > Authentication > Users (lihat README.md).
---    Ganti email di bawah sesuai email admin yang kamu buat.
+--    Dashboard PROJECT VIDEO > Authentication > Users.
+--    Ganti email di bawah sesuai email admin yang kamu buat
+--    (boleh sama persis dengan email admin di project foto,
+--    karena ini project & auth yang beda, tidak akan bentrok).
 -- ============================================================
 -- update public.profiles
 -- set role = 'admin'
