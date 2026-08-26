@@ -27,9 +27,15 @@ if (loginSub) {
     : 'Masuk untuk melihat momen foto kelas XII Satelit';
 }
 
-// Kalau sudah login sebelumnya (di project yang sesuai), langsung lempar ke galeri yang dipilih
-client.auth.getSession().then(({ data }) => {
-  if (data.session) window.location.href = dest;
+// Jangan auto-redirect memakai sesi lama.
+// Ini penting jika browser masih menyimpan sesi akun visitor/moderator sebelumnya.
+// Kita bersihkan sesi project yang dipilih terlebih dahulu supaya login berikutnya
+// benar-benar menggunakan email/password yang baru dimasukkan.
+client.auth.getSession().then(async ({ data }) => {
+  if (data.session) {
+    console.log('SECRET ROOM: membersihkan sesi lama:', data.session.user.email);
+    await client.auth.signOut();
+  }
 });
 
 form.addEventListener('submit', async (e) => {
