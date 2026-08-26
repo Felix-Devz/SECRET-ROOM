@@ -9,7 +9,7 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
-  role text not null default 'visitor' check (role in ('admin', 'uploader', 'visitor')),
+  role text not null default 'visitor' check (role in ('admin', 'visitor')),
   created_at timestamptz not null default now()
 );
 
@@ -20,11 +20,10 @@ on public.profiles for select
 to authenticated
 using (true);
 
-create policy "User hanya bisa update nama sendiri"
+create policy "User hanya bisa update profile miliknya sendiri"
 on public.profiles for update
 to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
+using (auth.uid() = id);
 
 -- Trigger: setiap kali ada user baru di auth.users,
 -- otomatis buatkan baris profiles dengan role default 'visitor'.
@@ -74,7 +73,7 @@ to authenticated
 with check (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'uploader')
+    where id = auth.uid() and role = 'admin'
   )
 );
 
@@ -84,7 +83,7 @@ to authenticated
 using (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'uploader')
+    where id = auth.uid() and role = 'admin'
   )
 );
 
@@ -105,7 +104,7 @@ with check (
   bucket_id = 'class-photos'
   and exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'uploader')
+    where id = auth.uid() and role = 'admin'
   )
 );
 
@@ -116,7 +115,7 @@ using (
   bucket_id = 'class-photos'
   and exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'uploader')
+    where id = auth.uid() and role = 'admin'
   )
 );
 

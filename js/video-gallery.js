@@ -48,10 +48,26 @@ async function init() {
     .from('profiles')
     .select('role, full_name')
     .eq('id', session.user.id)
-    .single();
+    .maybeSingle();
 
-  if (error) console.error('Gagal ambil profile:', error);
-  profile = prof || { role: 'visitor' };
+  if (error) {
+    console.error('Gagal ambil profile:', error);
+    roleBadge.textContent = '⚠️ Role error';
+    alert('Profil akun tidak bisa dibaca dari database. Pastikan akun ini ada di tabel public.profiles pada project Supabase yang sedang dipakai.
+
+Detail: ' + error.message);
+    return;
+  }
+
+  if (!prof) {
+    console.error('Profile tidak ditemukan untuk user:', session.user.id, session.user.email);
+    roleBadge.textContent = '⚠️ Profil tidak ditemukan';
+    alert('Profil akun ini belum ada di public.profiles. Jalankan SQL migrasi pada project Supabase yang benar, lalu login ulang.');
+    return;
+  }
+
+  profile = { ...prof, role: String(prof.role || 'visitor').trim().toLowerCase() };
+  console.log('SECRET ROOM role:', profile.role, 'email:', session.user.email, 'user_id:', session.user.id);
 
   roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
 

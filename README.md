@@ -151,13 +151,11 @@ dan melihat galeri.
 - Batas ukuran upload foto diset 8MB di `js/gallery.js` (`MAX_FILE_MB`) —
   ubah sesuai kebutuhan.
 
+## PERBAIKAN ROLE MODERATOR / UPLOADER
 
-## Role uploader / moderator
+Jika akun `mods@gmail.com` masih tampil sebagai Pengunjung, jalankan:
+- `supabase/01_FIX_UPLOADER_PHOTO.sql` di project FOTO
+- `supabase/02_FIX_UPLOADER_VIDEO.sql` di project VIDEO
 
-- `visitor`: hanya melihat foto/video.
-- `uploader`: boleh upload foto dan video, tetapi tidak boleh menghapus.
-- `admin`: boleh upload dan menghapus.
-
-Jika foto dan video memakai dua project Supabase berbeda, jalankan `supabase/migrate_uploader_photo.sql` di project FOTO dan `supabase/migrate_uploader_video.sql` di project VIDEO. Setelah itu set akun moderator menjadi `uploader` pada masing-masing project.
-
-Penting: akses update profile dibatasi ke kolom `full_name`, sehingga user tidak bisa mengubah `role` sendiri dari browser.
+Kedua file tersebut juga memperbaiki RLS sehingga uploader hanya bisa upload, sedangkan DELETE tetap admin saja.
+Setelah menjalankan SQL, **logout lalu login ulang** dan hard refresh halaman (Ctrl+Shift+R).
