@@ -52,7 +52,7 @@ async function init() {
   if (error) console.error('Gagal ambil profile:', error);
   profile = prof || { role: 'visitor' };
 
-  roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : '🙋 Pengunjung';
+  roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
 
   await loadPhotos();
   subscribeRealtime();
@@ -137,7 +137,10 @@ async function loadPhotos() {
 function renderGrid(photos) {
   grid.innerHTML = '';
 
-  if (profile.role === 'admin') {
+  const canUpload = profile.role === 'admin' || profile.role === 'uploader';
+  const canDelete = profile.role === 'admin';
+
+  if (canUpload) {
     const tile = document.createElement('div');
     tile.className = 'upload-tile';
     tile.innerHTML = '<span class="plus">+</span><span>Tambah Foto</span>';
@@ -148,7 +151,7 @@ function renderGrid(photos) {
   if (photos.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.textContent = profile.role === 'admin'
+    empty.textContent = canUpload
       ? 'Belum ada foto. Klik "+ Tambah Foto" untuk mengunggah momen pertama!'
       : 'Belum ada foto. Nantikan admin mengunggah momen pertama!';
     grid.appendChild(empty);
@@ -162,10 +165,10 @@ function renderGrid(photos) {
     card.innerHTML = `
       <div class="photo-frame"><img src="${photo.image_url}" alt="${escapeHtml(photo.caption || 'Foto kelas')}" loading="lazy"/></div>
       <div class="caption">${photo.caption ? escapeHtml(photo.caption) : '&nbsp;'}</div>
-      ${profile.role === 'admin' ? '<button class="del-btn" title="Hapus">✕</button>' : ''}
+      ${canDelete ? '<button class="del-btn" title="Hapus">✕</button>' : ''}
     `;
     card.querySelector('.photo-frame').addEventListener('click', () => openLightbox(photo.image_url, photo.caption));
-    if (profile.role === 'admin') {
+    if (canDelete) {
       card.querySelector('.del-btn').addEventListener('click', () => confirmDelete(photo.id));
     }
     grid.appendChild(card);
@@ -178,11 +181,27 @@ fileInput.addEventListener('change', (e) => {
   if (!file) return;
 
   if (file.size > MAX_FILE_MB * 1024 * 1024) {
-    alert(`Ukuran foto maksimal ${MAX_FILE_MB}MB ya.`);
+    showSizeWarning(file, 'foto');
     return;
   }
   openCaptionModal(file);
 });
+
+function showSizeWarning(file, jenis) {
+  const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+  modalBody.innerHTML = `
+    <h3>⚠️ Ukuran ${jenis} terlalu besar</h3>
+    <p class="modal-text">
+      File yang kamu pilih berukuran <strong>${sizeMb}MB</strong>, melebihi batas maksimal
+      <strong>${MAX_FILE_MB}MB</strong> untuk ${jenis}. Coba kompres atau pilih file yang lebih kecil.
+    </p>
+    <div class="modal-actions">
+      <button id="okBtn" class="btn-primary">Mengerti</button>
+    </div>
+  `;
+  modalOverlay.style.display = 'flex';
+  document.getElementById('okBtn').addEventListener('click', closeModal);
+}
 
 function openCaptionModal(file) {
   const previewUrl = URL.createObjectURL(file);
