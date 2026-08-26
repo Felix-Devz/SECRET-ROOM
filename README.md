@@ -150,3 +150,14 @@ dan melihat galeri.
   client-side selama RLS aktif (sudah diatur di `schema.sql`).
 - Batas ukuran upload foto diset 8MB di `js/gallery.js` (`MAX_FILE_MB`) —
   ubah sesuai kebutuhan.
+
+
+## Role uploader / moderator
+
+- `visitor`: hanya melihat foto/video.
+- `uploader`: boleh upload foto dan video, tetapi tidak boleh menghapus.
+- `admin`: boleh upload dan menghapus.
+
+Jika foto dan video memakai dua project Supabase berbeda, jalankan `supabase/migrate_uploader_photo.sql` di project FOTO dan `supabase/migrate_uploader_video.sql` di project VIDEO. Setelah itu set akun moderator menjadi `uploader` pada masing-masing project.
+
+Penting: akses update profile dibatasi ke kolom `full_name`, sehingga user tidak bisa mengubah `role` sendiri dari browser.
