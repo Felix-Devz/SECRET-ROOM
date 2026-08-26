@@ -27,14 +27,11 @@ if (loginSub) {
     : 'Masuk untuk melihat momen foto kelas XII Satelit';
 }
 
-// Jangan auto-redirect memakai sesi lama.
-// Ini penting jika browser masih menyimpan sesi akun visitor/moderator sebelumnya.
-// Kita bersihkan sesi project yang dipilih terlebih dahulu supaya login berikutnya
-// benar-benar menggunakan email/password yang baru dimasukkan.
-client.auth.getSession().then(async ({ data }) => {
+// Jangan otomatis memakai sesi lama. User harus login dengan akun yang dipilih.
+// Ini mencegah akun visitor lama terbawa saat mencoba login sebagai moderator/uploader.
+client.auth.getSession().then(({ data }) => {
   if (data.session) {
-    console.log('SECRET ROOM: membersihkan sesi lama:', data.session.user.email);
-    await client.auth.signOut();
+    console.log('SECRET ROOM: sesi lama ditemukan, akan dibersihkan sebelum login baru:', data.session.user.email);
   }
 });
 
@@ -49,7 +46,16 @@ form.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Memproses...';
 
-  const { error } = await client.auth.signInWithPassword({ email, password });
+  // Hapus sesi lama dari project yang dipakai agar akun yang baru dimasukkan benar-benar aktif.
+  await client.auth.signOut();
+
+  const { data: loginData, error } = await client.auth.signInWithPassword({ email, password });
+  console.log('SECRET ROOM login:', {
+    email,
+    tipe,
+    user_id: loginData?.user?.id || null,
+    error
+  });
 
   btn.disabled = false;
   btn.textContent = 'Masuk';

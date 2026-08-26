@@ -150,12 +150,3 @@ dan melihat galeri.
   client-side selama RLS aktif (sudah diatur di `schema.sql`).
 - Batas ukuran upload foto diset 8MB di `js/gallery.js` (`MAX_FILE_MB`) —
   ubah sesuai kebutuhan.
-
-## PERBAIKAN ROLE MODERATOR / UPLOADER
-
-Jika akun `mods@gmail.com` masih tampil sebagai Pengunjung, jalankan:
-- `supabase/01_FIX_UPLOADER_PHOTO.sql` di project FOTO
-- `supabase/02_FIX_UPLOADER_VIDEO.sql` di project VIDEO
-
-Kedua file tersebut juga memperbaiki RLS sehingga uploader hanya bisa upload, sedangkan DELETE tetap admin saja.
-Setelah menjalankan SQL, **logout lalu login ulang** dan hard refresh halaman (Ctrl+Shift+R).

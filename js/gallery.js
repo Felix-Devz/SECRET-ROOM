@@ -49,26 +49,32 @@ async function init() {
     .eq('id', session.user.id)
     .maybeSingle();
 
-  if (error) {
-    console.error('Gagal ambil profile:', error);
-    roleBadge.textContent = '⚠️ Role error';
-    alert('Profil akun tidak bisa dibaca dari database. Pastikan akun ini ada di tabel public.profiles pada project Supabase yang sedang dipakai.
+  // Debug yang sengaja ditampilkan supaya masalah role tidak lagi tersembunyi.
+  console.log('SECRET ROOM role:', {
+    email: session.user.email,
+    user_id: session.user.id,
+    profile: prof,
+    profile_error: error
+  });
 
-Detail: ' + error.message);
+  if (error) {
+    roleBadge.textContent = '⚠️ Role gagal dibaca';
+    console.error('SECRET ROOM: gagal membaca profiles. Pastikan RLS SELECT profiles mengizinkan authenticated.', error);
     return;
   }
 
   if (!prof) {
-    console.error('Profile tidak ditemukan untuk user:', session.user.id, session.user.email);
-    roleBadge.textContent = '⚠️ Profil tidak ditemukan';
-    alert('Profil akun ini belum ada di public.profiles. Jalankan SQL migrasi pada project Supabase yang benar, lalu login ulang.');
+    roleBadge.textContent = '⚠️ Profile tidak ditemukan';
+    console.error('SECRET ROOM: profile tidak ditemukan untuk user_id:', session.user.id);
     return;
   }
 
+  // Normalisasi supaya 'uploader', 'UPLOADER', atau nilai dengan spasi tetap terbaca.
   profile = { ...prof, role: String(prof.role || 'visitor').trim().toLowerCase() };
-  console.log('SECRET ROOM role:', profile.role, 'email:', session.user.email, 'user_id:', session.user.id);
 
-  roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
+  roleBadge.textContent = profile.role === 'admin'
+    ? '👑 Admin'
+    : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
 
   await loadPhotos();
   subscribeRealtime();
