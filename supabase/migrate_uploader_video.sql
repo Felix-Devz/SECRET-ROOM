@@ -1,6 +1,7 @@
 -- ============================================================
--- MIGRASI ROLE UPLOADER — PROJECT FOTO
--- uploader: boleh upload foto, TIDAK boleh hapus.
+-- MIGRASI ROLE UPLOADER — PROJECT VIDEO
+-- Jalankan di SQL Editor PROJECT VIDEO.
+-- uploader: boleh upload video, TIDAK boleh hapus.
 -- admin: boleh upload + hapus.
 -- visitor: hanya melihat.
 -- ============================================================
@@ -20,11 +21,11 @@ to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
--- Upload foto: admin + uploader.
-drop policy if exists "Hanya admin yang bisa upload foto (insert)" on public.photos;
-drop policy if exists "Admin & uploader bisa upload foto (insert)" on public.photos;
-create policy "Admin & uploader bisa upload foto (insert)"
-on public.photos for insert
+-- Upload video: admin + uploader.
+drop policy if exists "Hanya admin yang bisa upload video (insert)" on public.videos;
+drop policy if exists "Admin & uploader bisa upload video (insert)" on public.videos;
+create policy "Admin & uploader bisa upload video (insert)"
+on public.videos for insert
 to authenticated
 with check (
   exists (
@@ -33,11 +34,10 @@ with check (
   )
 );
 
--- Hapus foto: ADMIN SAJA.
-drop policy if exists "Admin & uploader bisa hapus foto" on public.photos;
-drop policy if exists "Hanya admin yang bisa hapus foto" on public.photos;
-create policy "Hanya admin yang bisa hapus foto"
-on public.photos for delete
+-- Hapus video: ADMIN SAJA.
+drop policy if exists "Hanya admin yang bisa hapus video" on public.videos;
+create policy "Hanya admin yang bisa hapus video"
+on public.videos for delete
 to authenticated
 using (
   exists (
@@ -47,13 +47,13 @@ using (
 );
 
 -- Storage upload: admin + uploader.
-drop policy if exists "Hanya admin yang bisa upload file ke storage" on storage.objects;
-drop policy if exists "Admin & uploader bisa upload file ke storage" on storage.objects;
-create policy "Admin & uploader bisa upload file ke storage"
+drop policy if exists "Hanya admin yang bisa upload file video ke storage" on storage.objects;
+drop policy if exists "Admin & uploader bisa upload file video ke storage" on storage.objects;
+create policy "Admin & uploader bisa upload file video ke storage"
 on storage.objects for insert
 to authenticated
 with check (
-  bucket_id = 'class-photos'
+  bucket_id = 'class-videos'
   and exists (
     select 1 from public.profiles
     where id = auth.uid() and role in ('admin', 'uploader')
@@ -61,13 +61,12 @@ with check (
 );
 
 -- Storage delete: ADMIN SAJA.
-drop policy if exists "Admin & uploader bisa hapus file ke storage" on storage.objects;
-drop policy if exists "Hanya admin yang bisa hapus file ke storage" on storage.objects;
-create policy "Hanya admin yang bisa hapus file ke storage"
+drop policy if exists "Hanya admin yang bisa hapus file video" on storage.objects;
+create policy "Hanya admin yang bisa hapus file video"
 on storage.objects for delete
 to authenticated
 using (
-  bucket_id = 'class-photos'
+  bucket_id = 'class-videos'
   and exists (
     select 1 from public.profiles
     where id = auth.uid() and role = 'admin'
