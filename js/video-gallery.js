@@ -1,3 +1,4 @@
+// Admin password API v3: use Vercel /api/admin-password, not Supabase Edge Functions.
 import { supabaseVideo as supabase } from './supabaseClientVideo.js';
 
 const BUCKET = 'class-videos';

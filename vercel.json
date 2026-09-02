@@ -1,5 +1,28 @@
 {
   "functions": {
-    "api/admin-password.js": { "runtime": "nodejs22.x", "maxDuration": 10 }
-  }
+    "api/admin-password.js": {
+      "runtime": "nodejs22.x",
+      "maxDuration": 10
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }
