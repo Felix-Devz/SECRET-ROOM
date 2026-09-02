@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/admin-password.js": { "runtime": "nodejs22.x", "maxDuration": 10 }
+  }
+}
