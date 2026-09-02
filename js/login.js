@@ -27,12 +27,9 @@ if (loginSub) {
     : 'Masuk untuk melihat momen foto kelas XII Satelit';
 }
 
-// Jangan otomatis memakai sesi lama. User harus login dengan akun yang dipilih.
-// Ini mencegah akun visitor lama terbawa saat mencoba login sebagai moderator/uploader.
+// Kalau sudah login sebelumnya (di project yang sesuai), langsung lempar ke galeri yang dipilih
 client.auth.getSession().then(({ data }) => {
-  if (data.session) {
-    console.log('SECRET ROOM: sesi lama ditemukan, akan dibersihkan sebelum login baru:', data.session.user.email);
-  }
+  if (data.session) window.location.href = dest;
 });
 
 form.addEventListener('submit', async (e) => {
@@ -46,16 +43,7 @@ form.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Memproses...';
 
-  // Hapus sesi lama dari project yang dipakai agar akun yang baru dimasukkan benar-benar aktif.
-  await client.auth.signOut();
-
-  const { data: loginData, error } = await client.auth.signInWithPassword({ email, password });
-  console.log('SECRET ROOM login:', {
-    email,
-    tipe,
-    user_id: loginData?.user?.id || null,
-    error
-  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
 
   btn.disabled = false;
   btn.textContent = 'Masuk';

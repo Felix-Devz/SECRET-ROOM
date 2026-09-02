@@ -48,34 +48,13 @@ async function init() {
     .from('profiles')
     .select('role, full_name')
     .eq('id', session.user.id)
-    .maybeSingle();
+    .single();
 
-  // Debug yang sengaja ditampilkan supaya masalah role tidak lagi tersembunyi.
-  console.log('SECRET ROOM role:', {
-    email: session.user.email,
-    user_id: session.user.id,
-    profile: prof,
-    profile_error: error
-  });
+  if (error) console.error('Gagal ambil profile:', error);
+  profile = prof || { role: 'visitor' };
 
-  if (error) {
-    roleBadge.textContent = '⚠️ Role gagal dibaca';
-    console.error('SECRET ROOM: gagal membaca profiles. Pastikan RLS SELECT profiles mengizinkan authenticated.', error);
-    return;
-  }
-
-  if (!prof) {
-    roleBadge.textContent = '⚠️ Profile tidak ditemukan';
-    console.error('SECRET ROOM: profile tidak ditemukan untuk user_id:', session.user.id);
-    return;
-  }
-
-  // Normalisasi supaya 'uploader', 'UPLOADER', atau nilai dengan spasi tetap terbaca.
-  profile = { ...prof, role: String(prof.role || 'visitor').trim().toLowerCase() };
-
-  roleBadge.textContent = profile.role === 'admin'
-    ? '👑 Admin'
-    : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
+  roleBadge.textContent = profile.role === 'admin' ? '👑 Admin' : (profile.role === 'uploader' ? '🛡️ Moderator' : '🙋 Pengunjung');
+  changePasswordBtn.style.display = profile.role === 'admin' ? 'inline-flex' : 'none';
 
   await loadVideos();
   subscribeRealtime();
@@ -86,59 +65,90 @@ logoutBtn.addEventListener('click', async () => {
   window.location.href = 'index.html';
 });
 
-changePasswordBtn.addEventListener('click', openChangePasswordModal);
+changePasswordBtn.addEventListener('click', openAdminPasswordModal);
 
-function openChangePasswordModal() {
+function openAdminPasswordModal() {
+  if (profile.role !== 'admin') return;
   modalBody.innerHTML = `
-    <h3>Ubah Password</h3>
+    <h3>Kelola Password</h3>
+    <label>Akun</label>
+    <select id="targetUser" style="width:100%;margin-bottom:12px"><option value="">Memuat akun...</option></select>
     <label>Password Baru</label>
     <input id="newPassword" type="password" placeholder="Minimal 6 karakter" autocomplete="new-password"/>
     <label style="margin-top:12px">Ulangi Password Baru</label>
     <input id="confirmPassword" type="password" placeholder="Ketik ulang password baru" autocomplete="new-password"/>
     <p id="passwordError" class="error" style="text-align:left"></p>
-    <div class="modal-actions">
-      <button id="cancelBtn" class="btn-secondary">Batal</button>
-      <button id="savePasswordBtn" class="btn-primary">Simpan</button>
-    </div>
+    <div class="modal-actions"><button id="cancelBtn" class="btn-secondary">Batal</button><button id="savePasswordBtn" class="btn-primary">Simpan</button></div>
   `;
   modalOverlay.style.display = 'flex';
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
-  document.getElementById('savePasswordBtn').addEventListener('click', submitChangePassword);
+  document.getElementById('savePasswordBtn').addEventListener('click', submitAdminPasswordReset);
+  loadAdminUsers();
 }
 
-async function submitChangePassword() {
+async function adminPasswordFunction(payload) {
+  if (!session?.access_token) throw new Error('Sesi login sudah habis. Silakan login kembali.');
+
+  const response = await fetch('/api/admin-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+      'X-Admin-Project': 'video',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let data = null;
+  try { data = await response.json(); } catch {}
+  if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+async function loadAdminUsers() {
+  const select = document.getElementById('targetUser');
+  const errorEl = document.getElementById('passwordError');
+  try {
+    const data = await adminPasswordFunction({ action: 'list-users' });
+    select.innerHTML = '';
+    (data.users || []).forEach((user) => {
+      const option = document.createElement('option');
+      option.value = user.id;
+      option.textContent = `${user.full_name ? user.full_name + ' — ' : ''}${user.email} (${user.role})`;
+      select.appendChild(option);
+    });
+    if (!data.users?.length) errorEl.textContent = 'Tidak ada akun yang tersedia.';
+  } catch (error) {
+    console.error(error);
+    errorEl.textContent = 'Gagal memuat daftar akun: ' + error.message;
+  }
+}
+
+async function submitAdminPasswordReset() {
+  const targetUser = document.getElementById('targetUser').value;
   const newPassword = document.getElementById('newPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
   const errorEl = document.getElementById('passwordError');
   const saveBtn = document.getElementById('savePasswordBtn');
   errorEl.textContent = '';
-
-  if (newPassword.length < 6) {
-    errorEl.textContent = 'Password minimal 6 karakter.';
-    return;
-  }
-  if (newPassword !== confirmPassword) {
-    errorEl.textContent = 'Password tidak cocok, coba lagi.';
-    return;
-  }
+  if (!targetUser) return void (errorEl.textContent = 'Pilih akun terlebih dahulu.');
+  if (newPassword.length < 6) return void (errorEl.textContent = 'Password minimal 6 karakter.');
+  if (newPassword !== confirmPassword) return void (errorEl.textContent = 'Password tidak cocok, coba lagi.');
 
   saveBtn.disabled = true;
   saveBtn.textContent = 'Menyimpan...';
-
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-  saveBtn.disabled = false;
-  saveBtn.textContent = 'Simpan';
-
-  if (error) {
+  try {
+    await adminPasswordFunction({ action: 'reset-password', user_id: targetUser, password: newPassword });
+    closeModal();
+    alert('Password akun berhasil diubah.');
+  } catch (error) {
+    console.error(error);
     errorEl.textContent = 'Gagal mengubah password: ' + error.message;
-    return;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Simpan';
   }
-
-  closeModal();
-  alert('Password berhasil diubah. Silakan login ulang dengan password baru.');
-  await supabase.auth.signOut();
-  window.location.href = 'index.html';
 }
 
 async function loadVideos() {
