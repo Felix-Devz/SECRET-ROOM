@@ -1,21 +1,28 @@
 -- ============================================================
--- TAMBAH ROLE "uploader" — bisa upload, TIDAK BISA hapus
--- Jalankan file ini di SQL Editor project FOTO, lalu jalankan
--- LAGI (dengan menyesuaikan nama tabel photos -> videos) di
--- project VIDEO. Dua versi sudah disiapkan di bawah, pilih
--- salah satu sesuai project yang lagi kamu buka.
+-- MIGRASI ROLE UPLOADER — PROJECT FOTO
+-- uploader: boleh upload foto, TIDAK boleh hapus.
+-- admin: boleh upload + hapus.
+-- visitor: hanya melihat.
 -- ============================================================
 
-
--- ========== VERSI UNTUK PROJECT FOTO (tabel: photos) ==========
-
--- 1. Izinkan nilai role baru 'uploader' di tabel profiles
 alter table public.profiles drop constraint if exists profiles_role_check;
 alter table public.profiles add constraint profiles_role_check
   check (role in ('admin', 'uploader', 'visitor'));
 
--- 2. Izinkan uploader (selain admin) untuk INSERT foto
+-- Cegah user biasa mengubah role dirinya sendiri dari browser.
+drop policy if exists "User hanya bisa update profile miliknya sendiri" on public.profiles;
+drop policy if exists "User hanya bisa update nama sendiri" on public.profiles;
+revoke update on public.profiles from authenticated;
+grant update (full_name) on public.profiles to authenticated;
+create policy "User hanya bisa update nama sendiri"
+on public.profiles for update
+to authenticated
+using (auth.uid() = id)
+with check (auth.uid() = id);
+
+-- Upload foto: admin + uploader.
 drop policy if exists "Hanya admin yang bisa upload foto (insert)" on public.photos;
+drop policy if exists "Admin & uploader bisa upload foto (insert)" on public.photos;
 create policy "Admin & uploader bisa upload foto (insert)"
 on public.photos for insert
 to authenticated
@@ -26,11 +33,22 @@ with check (
   )
 );
 
--- 3. HAPUS foto tetap KHUSUS admin saja (policy delete tidak diubah,
---    cukup pastikan masih ada — dibiarkan seperti semula)
+-- Hapus foto: ADMIN SAJA.
+drop policy if exists "Admin & uploader bisa hapus foto" on public.photos;
+drop policy if exists "Hanya admin yang bisa hapus foto" on public.photos;
+create policy "Hanya admin yang bisa hapus foto"
+on public.photos for delete
+to authenticated
+using (
+  exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  )
+);
 
--- 4. Izinkan uploader upload file ke Storage juga
+-- Storage upload: admin + uploader.
 drop policy if exists "Hanya admin yang bisa upload file ke storage" on storage.objects;
+drop policy if exists "Admin & uploader bisa upload file ke storage" on storage.objects;
 create policy "Admin & uploader bisa upload file ke storage"
 on storage.objects for insert
 to authenticated
@@ -42,43 +60,21 @@ with check (
   )
 );
 
+-- Storage delete: ADMIN SAJA.
+drop policy if exists "Admin & uploader bisa hapus file ke storage" on storage.objects;
+drop policy if exists "Hanya admin yang bisa hapus file ke storage" on storage.objects;
+create policy "Hanya admin yang bisa hapus file ke storage"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'class-photos'
+  and exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  )
+);
 
--- ========== VERSI UNTUK PROJECT VIDEO (tabel: videos) ==========
--- (Hapus tanda komentar -- di bawah ini kalau mau jalankan versi video,
---  lalu jalankan di SQL Editor project VIDEO)
-
--- alter table public.profiles drop constraint if exists profiles_role_check;
--- alter table public.profiles add constraint profiles_role_check
---   check (role in ('admin', 'uploader', 'visitor'));
-
--- drop policy if exists "Hanya admin yang bisa upload video (insert)" on public.videos;
--- create policy "Admin & uploader bisa upload video (insert)"
--- on public.videos for insert
--- to authenticated
--- with check (
---   exists (
---     select 1 from public.profiles
---     where id = auth.uid() and role in ('admin', 'uploader')
---   )
--- );
-
--- drop policy if exists "Hanya admin yang bisa upload file video ke storage" on storage.objects;
--- create policy "Admin & uploader bisa upload file video ke storage"
--- on storage.objects for insert
--- to authenticated
--- with check (
---   bucket_id = 'class-videos'
---   and exists (
---     select 1 from public.profiles
---     where id = auth.uid() and role in ('admin', 'uploader')
---   )
--- );
-
-
--- ============================================================
--- CARA MENJADIKAN SESEORANG "uploader":
--- Ganti email di bawah, jalankan di project yang sesuai (foto/video)
--- ============================================================
+-- Jadikan akun sebagai uploader (jalankan setelah user dibuat):
 -- update public.profiles
 -- set role = 'uploader'
--- where id = (select id from auth.users where email = 'EMAIL_UPLOADER@contoh.com');
+-- where id = (select id from auth.users where email = 'EMAIL_UPLOADER');
